@@ -6,10 +6,12 @@ import '../widgets/mango_illustration.dart';
 
 class ProcessingScreen extends StatefulWidget {
   final ValueChanged<ClassificationResult> onFinished;
+  final String? imagePath;
 
   const ProcessingScreen({
     super.key,
     required this.onFinished,
+    this.imagePath,
   });
 
   @override
@@ -24,7 +26,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   }
 
   Future<void> _classify() async {
-    final result = await MangoClassifier.classifyDemo();
+    final result = await MangoClassifier.classifyDemo(imagePath: widget.imagePath);
     if (!mounted) return;
     widget.onFinished(result);
   }
@@ -75,7 +77,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  "MobileNetV3 is evaluating the image using the device's processor.",
+                  "Demo mode is active. This screen does not run the trained MobileNetV3 model yet.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textSecondary,
@@ -99,7 +101,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Processing on device',
+                              'Simulated demo result',
                               style: TextStyle(
                                 color: AppColors.green,
                                 fontSize: 13,
@@ -108,7 +110,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                             ),
                             SizedBox(height: 2),
                             Text(
-                              'No internet connection required.',
+                              'Not a real model prediction.',
                               style: TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 11,

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../models/classification_result.dart';
 import '../services/history_store.dart';
@@ -38,7 +40,48 @@ class _ResultScreenState extends State<ResultScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const MangoPreview(height: 220),
+            if (result.imagePath != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.file(
+                  File(result.imagePath!),
+                  height: 220,
+                  width: double.infinity,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const MangoPreview(height: 220),
+                ),
+              )
+            else
+              const MangoPreview(height: 220),
+            if (result.isDemo) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0D5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE7B45C)),
+                ),
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: Color(0xFF8A5A00), size: 19),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'DEMO RESULT — This grade and confidence are simulated and were not produced by an AI model.',
+                        style: TextStyle(
+                          color: Color(0xFF704900),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 13),
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -147,7 +190,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Model   MobileNetV3        Input   224 × 224',
+                    'Model   Not connected        Input   Demo mode',
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 10,
@@ -156,7 +199,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                   SizedBox(height: 6),
                   Text(
-                    'Processing   On-device (offline)',
+                    'Processing   Simulated demo result',
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 10,
@@ -165,7 +208,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                   SizedBox(height: 6),
                   Text(
-                    'AI assessment • Visual criteria only',
+                    'Demo only • Not a real prediction',
                     style: TextStyle(
                       color: AppColors.green,
                       fontSize: 10,

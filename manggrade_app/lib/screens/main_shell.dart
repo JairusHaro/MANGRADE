@@ -25,10 +25,11 @@ class _MainShellState extends State<MainShell> {
     setState(() => index = value);
   }
 
-  void _startAnalysis() {
+  void _startAnalysis(String? imagePath) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ProcessingScreen(
+          imagePath: imagePath,
           onFinished: (ClassificationResult result) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute<void>(

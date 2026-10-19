@@ -7,7 +7,7 @@ class MangoClassifier {
 
   /// Demo inference used so the project can run before the real TFLite
   /// MobileNetV3 file is added.
-  static Future<ClassificationResult> classifyDemo() async {
+  static Future<ClassificationResult> classifyDemo({String? imagePath}) async {
     await Future<void>.delayed(const Duration(milliseconds: 1300));
 
     const classes = [
@@ -26,6 +26,8 @@ class MangoClassifier {
       mangoClass: classes[index],
       confidence: confidences[index],
       timestamp: DateTime.now(),
+      imagePath: imagePath,
+      isDemo: true,
     );
   }
 

@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../theme/app_theme.dart';
 import '../widgets/mango_illustration.dart';
 
 class ScanScreen extends StatefulWidget {
-  final VoidCallback onAnalyze;
+  final ValueChanged<String?> onAnalyze;
 
   const ScanScreen({
     super.key,
@@ -15,7 +19,37 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
+  final ImagePicker _picker = ImagePicker();
   bool cameraSelected = true;
+  XFile? selectedImage;
+  bool pickingImage = false;
+
+  Future<void> _pickImage(ImageSource source) async {
+    if (pickingImage) return;
+    setState(() => pickingImage = true);
+    try {
+      final image = await _picker.pickImage(
+        source: source,
+        imageQuality: 90,
+        maxWidth: 1600,
+      );
+      if (!mounted) return;
+      if (image != null) {
+        setState(() => selectedImage = image);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open image source: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => pickingImage = false);
+    }
+  }
+
+  Future<void> _chooseCurrentSource() async {
+    await _pickImage(cameraSelected ? ImageSource.camera : ImageSource.gallery);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,21 +89,37 @@ class _ScanScreenState extends State<ScanScreen> {
                         const Positioned.fill(
                           child: ColoredBox(color: AppColors.camera),
                         ),
-                        Container(
-                          width: 290,
-                          height: 290,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF244F31),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.06),
+                        if (selectedImage != null)
+                          Positioned.fill(
+                            child: Image.file(
+                              File(selectedImage!.path),
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Text(
+                                  'Could not preview this image',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          )
+                        else ...[
+                          Container(
+                            width: 290,
+                            height: 290,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF244F31),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.06),
+                              ),
                             ),
                           ),
-                        ),
-                        const MangoIllustration(width: 190, height: 225),
-                        Positioned.fill(
-                          child: CustomPaint(painter: _ScanFramePainter()),
-                        ),
+                          const MangoIllustration(width: 190, height: 225),
+                        ],
+                        if (selectedImage == null)
+                          Positioned.fill(
+                            child: CustomPaint(painter: _ScanFramePainter()),
+                          ),
                         Positioned(
                           bottom: 18,
                           child: Container(
@@ -78,12 +128,14 @@ class _ScanScreenState extends State<ScanScreen> {
                               vertical: 9,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.22),
+                              color: Colors.black.withValues(alpha: 0.55),
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: const Text(
-                              'Position one mango inside the frame',
-                              style: TextStyle(
+                            child: Text(
+                              selectedImage == null
+                                  ? 'Choose a photo to begin'
+                                  : 'Image selected • demo only',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -164,25 +216,56 @@ class _ScanScreenState extends State<ScanScreen> {
                         SizedBox(
                           width: double.infinity,
                           height: 50,
-                          child: FilledButton.icon(
-                            onPressed: widget.onAnalyze,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.green,
-                              foregroundColor: Colors.white,
+                          child: OutlinedButton.icon(
+                            onPressed:
+                                pickingImage ? null : _chooseCurrentSource,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.green,
+                              side: const BorderSide(color: AppColors.green),
                             ),
-                            icon: const Icon(Icons.auto_awesome_rounded),
+                            icon: pickingImage
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : Icon(cameraSelected
+                                    ? Icons.camera_alt_rounded
+                                    : Icons.photo_library_rounded),
                             label: Text(
-                              cameraSelected
-                                  ? 'Analyze Demo Mango'
-                                  : 'Analyze Demo Gallery Image',
+                              selectedImage == null
+                                  ? (cameraSelected
+                                      ? 'Take Photo'
+                                      : 'Choose from Gallery')
+                                  : 'Retake / Choose Another Image',
                               style:
                                   const TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
                         const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: FilledButton.icon(
+                            onPressed: selectedImage == null
+                                ? null
+                                : () => widget.onAnalyze(selectedImage!.path),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.green,
+                              foregroundColor: Colors.white,
+                            ),
+                            icon: const Icon(Icons.auto_awesome_rounded),
+                            label: const Text(
+                              'Run Demo Classification',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         const Text(
-                          'Camera/gallery input will be connected with the real classifier later.',
+                          'Results are simulated for interface testing. The trained model is not connected yet.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.textSecondary,
@@ -244,42 +327,24 @@ class _ScanFramePainter extends CustomPainter {
       width: 300,
       height: 300,
     );
-
     final paint = Paint()
       ..color = Colors.white
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
-
     const l = 34.0;
-
     canvas.drawLine(rect.topLeft, rect.topLeft + const Offset(l, 0), paint);
     canvas.drawLine(rect.topLeft, rect.topLeft + const Offset(0, l), paint);
-
     canvas.drawLine(rect.topRight, rect.topRight + const Offset(-l, 0), paint);
     canvas.drawLine(rect.topRight, rect.topRight + const Offset(0, l), paint);
-
     canvas.drawLine(
-      rect.bottomLeft,
-      rect.bottomLeft + const Offset(l, 0),
-      paint,
-    );
+        rect.bottomLeft, rect.bottomLeft + const Offset(l, 0), paint);
     canvas.drawLine(
-      rect.bottomLeft,
-      rect.bottomLeft + const Offset(0, -l),
-      paint,
-    );
-
+        rect.bottomLeft, rect.bottomLeft + const Offset(0, -l), paint);
     canvas.drawLine(
-      rect.bottomRight,
-      rect.bottomRight + const Offset(-l, 0),
-      paint,
-    );
+        rect.bottomRight, rect.bottomRight + const Offset(-l, 0), paint);
     canvas.drawLine(
-      rect.bottomRight,
-      rect.bottomRight + const Offset(0, -l),
-      paint,
-    );
+        rect.bottomRight, rect.bottomRight + const Offset(0, -l), paint);
   }
 
   @override
