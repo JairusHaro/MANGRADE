@@ -134,7 +134,7 @@ class _ScanScreenState extends State<ScanScreen> {
                             child: Text(
                               selectedImage == null
                                   ? 'Choose a photo to begin'
-                                  : 'Image selected • demo only',
+                                  : 'Image selected • ready to upload',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -258,18 +258,20 @@ class _ScanScreenState extends State<ScanScreen> {
                             ),
                             icon: const Icon(Icons.auto_awesome_rounded),
                             label: const Text(
-                              'Run Demo Classification',
+                              'Analyze Mango Image',
                               style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Results are simulated for interface testing. The trained model is not connected yet.',
+                          'Your image will be uploaded for validation. '
+                          'Mango grading will be available once the trained model is connected.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 10,
+                            fontSize: 11,
+                            height: 1.4,
                           ),
                         ),
                       ],

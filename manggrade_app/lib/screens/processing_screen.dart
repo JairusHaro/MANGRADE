@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import '../models/classification_result.dart';
-import '../services/mango_classifier.dart';
+
+import '../services/manggrade_api.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mango_illustration.dart';
 
 class ProcessingScreen extends StatefulWidget {
-  final ValueChanged<ClassificationResult> onFinished;
+  final ValueChanged<MangoApiResponse> onFinished;
+  final ValueChanged<String> onError;
   final String? imagePath;
 
   const ProcessingScreen({
     super.key,
     required this.onFinished,
+    required this.onError,
     this.imagePath,
   });
 
@@ -22,13 +24,23 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   @override
   void initState() {
     super.initState();
-    _classify();
+    _analyze();
   }
 
-  Future<void> _classify() async {
-    final result = await MangoClassifier.classifyDemo(imagePath: widget.imagePath);
-    if (!mounted) return;
-    widget.onFinished(result);
+  Future<void> _analyze() async {
+    if (widget.imagePath == null) {
+      widget.onError('Please select an image first.');
+      return;
+    }
+
+    try {
+      final result = await MangGradeApi.analyzeImage(widget.imagePath!);
+      if (!mounted) return;
+      widget.onFinished(result);
+    } catch (error) {
+      if (!mounted) return;
+      widget.onError(error.toString().replaceFirst('Exception: ', ''));
+    }
   }
 
   @override
@@ -43,7 +55,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'Analyzing Mango',
+                  'Uploading Mango Image',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 22,
@@ -77,49 +89,14 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  "Demo mode is active. This screen does not run the trained MobileNetV3 model yet.",
+                  'Sending your image to the MangGrade backend. '
+                  'A grade will only be shown when a trained model '
+                  'is connected.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 26),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.greenSoft,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.memory_rounded, color: AppColors.green),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Simulated demo result',
-                              style: TextStyle(
-                                color: AppColors.green,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Not a real model prediction.',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    height: 1.5,
                   ),
                 ),
               ],

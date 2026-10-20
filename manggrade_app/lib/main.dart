@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+
 import 'screens/main_shell.dart';
 import 'screens/splash_screen.dart';
+import 'services/history_store.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await HistoryStore.initialize();
+
   runApp(const MangoGradeApp());
 }
 

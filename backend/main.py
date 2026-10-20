@@ -41,20 +41,16 @@ def model_status():
     }
 
 
+
 @app.post("/predict")
 async def predict_mango(file: UploadFile = File(...)):
     """Validate an uploaded image. No prediction is made until a model is connected."""
+
+    filename = file.filename or "uploaded_image"
     content_type = (file.content_type or "").lower().split(";")[0].strip()
-    if content_type not in ALLOWED_MIME_TYPES:
-        await file.close()
-        raise HTTPException(
-            status_code=400,
-            detail="Please upload a JPG, PNG, or WEBP image.",
-        )
 
     try:
-        # Read at most one byte beyond the limit to avoid loading an arbitrarily
-        # large upload into memory.
+        # Read at most one byte beyond the upload limit.
         contents = await file.read(MAX_IMAGE_BYTES + 1)
     finally:
         await file.close()
@@ -69,30 +65,43 @@ async def predict_mango(file: UploadFile = File(...)):
         with Image.open(BytesIO(contents)) as image:
             image_format = image.format
             width, height = image.size
+
             if image_format not in ALLOWED_IMAGE_FORMATS:
                 raise HTTPException(
                     status_code=400,
                     detail="The uploaded content must be a JPG, PNG, or WEBP image.",
                 )
-            if width <= 0 or height <= 0 or width * height > MAX_IMAGE_PIXELS:
+
+            if (
+                width <= 0
+                or height <= 0
+                or width * height > MAX_IMAGE_PIXELS
+            ):
                 raise HTTPException(
                     status_code=413,
                     detail="Image dimensions are too large to process safely.",
                 )
+
             image.verify()
+
     except HTTPException:
         raise
-    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
+    except (
+        UnidentifiedImageError,
+        OSError,
+        Image.DecompressionBombError,
+    ):
         raise HTTPException(
             status_code=400,
             detail="The uploaded file is not a valid image.",
         )
 
     return {
-        "filename": file.filename,
+        "filename": filename,
         "image_format": image_format,
         "width": width,
         "height": height,
+        "received_content_type": content_type or None,
         "predicted_grade": None,
         "confidence": None,
         "grades": GRADES,
