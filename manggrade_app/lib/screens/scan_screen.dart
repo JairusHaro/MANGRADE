@@ -48,7 +48,9 @@ class _ScanScreenState extends State<ScanScreen> {
                 padding: EdgeInsets.zero,
                 children: [
                   SizedBox(
-                    height: 430,
+                    height: (MediaQuery.sizeOf(context).height * 0.48)
+                        .clamp(300.0, 430.0)
+                        .toDouble(),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
@@ -66,9 +68,14 @@ class _ScanScreenState extends State<ScanScreen> {
                             ),
                           ),
                         ),
-                        const MangoIllustration(width: 190, height: 225),
+                        const MangoIllustration(
+                          width: 190,
+                          height: 225,
+                        ),
                         Positioned.fill(
-                          child: CustomPaint(painter: _ScanFramePainter()),
+                          child: CustomPaint(
+                            painter: _ScanFramePainter(),
+                          ),
                         ),
                         Positioned(
                           bottom: 18,
@@ -111,16 +118,22 @@ class _ScanScreenState extends State<ScanScreen> {
                                 child: _SourceTab(
                                   label: 'Camera',
                                   selected: cameraSelected,
-                                  onTap: () =>
-                                      setState(() => cameraSelected = true),
+                                  onTap: () {
+                                    setState(() {
+                                      cameraSelected = true;
+                                    });
+                                  },
                                 ),
                               ),
                               Expanded(
                                 child: _SourceTab(
                                   label: 'Gallery',
                                   selected: !cameraSelected,
-                                  onTap: () =>
-                                      setState(() => cameraSelected = false),
+                                  onTap: () {
+                                    setState(() {
+                                      cameraSelected = false;
+                                    });
+                                  },
                                 ),
                               ),
                             ],
@@ -170,13 +183,16 @@ class _ScanScreenState extends State<ScanScreen> {
                               backgroundColor: AppColors.green,
                               foregroundColor: Colors.white,
                             ),
-                            icon: const Icon(Icons.auto_awesome_rounded),
+                            icon: const Icon(
+                              Icons.auto_awesome_rounded,
+                            ),
                             label: Text(
                               cameraSelected
                                   ? 'Analyze Demo Mango'
                                   : 'Analyze Demo Gallery Image',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
@@ -239,10 +255,14 @@ class _SourceTab extends StatelessWidget {
 class _ScanFramePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    final frameSize = size.width < size.height
+        ? (size.width * 0.72).clamp(220.0, 300.0).toDouble()
+        : (size.height * 0.72).clamp(220.0, 300.0).toDouble();
+
     final rect = Rect.fromCenter(
       center: Offset(size.width / 2, size.height / 2 - 10),
-      width: 300,
-      height: 300,
+      width: frameSize,
+      height: frameSize,
     );
 
     final paint = Paint()
@@ -251,33 +271,49 @@ class _ScanFramePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    const l = 34.0;
+    const cornerLength = 34.0;
 
-    canvas.drawLine(rect.topLeft, rect.topLeft + const Offset(l, 0), paint);
-    canvas.drawLine(rect.topLeft, rect.topLeft + const Offset(0, l), paint);
+    canvas.drawLine(
+      rect.topLeft,
+      rect.topLeft + const Offset(cornerLength, 0),
+      paint,
+    );
+    canvas.drawLine(
+      rect.topLeft,
+      rect.topLeft + const Offset(0, cornerLength),
+      paint,
+    );
 
-    canvas.drawLine(rect.topRight, rect.topRight + const Offset(-l, 0), paint);
-    canvas.drawLine(rect.topRight, rect.topRight + const Offset(0, l), paint);
+    canvas.drawLine(
+      rect.topRight,
+      rect.topRight + const Offset(-cornerLength, 0),
+      paint,
+    );
+    canvas.drawLine(
+      rect.topRight,
+      rect.topRight + const Offset(0, cornerLength),
+      paint,
+    );
 
     canvas.drawLine(
       rect.bottomLeft,
-      rect.bottomLeft + const Offset(l, 0),
+      rect.bottomLeft + const Offset(cornerLength, 0),
       paint,
     );
     canvas.drawLine(
       rect.bottomLeft,
-      rect.bottomLeft + const Offset(0, -l),
+      rect.bottomLeft + const Offset(0, -cornerLength),
       paint,
     );
 
     canvas.drawLine(
       rect.bottomRight,
-      rect.bottomRight + const Offset(-l, 0),
+      rect.bottomRight + const Offset(-cornerLength, 0),
       paint,
     );
     canvas.drawLine(
       rect.bottomRight,
-      rect.bottomRight + const Offset(0, -l),
+      rect.bottomRight + const Offset(0, -cornerLength),
       paint,
     );
   }

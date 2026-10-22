@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import '../models/classification_result.dart';
 import '../theme/app_theme.dart';
@@ -58,7 +59,7 @@ class StandardScreen extends StatelessWidget {
                 fontSize: 12,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             ...cards.map((data) => _GuideCard(data: data)),
             Container(
               margin: const EdgeInsets.only(top: 2, bottom: 16),
@@ -83,7 +84,7 @@ class StandardScreen extends StatelessWidget {
                     'The app performs image-based visual classification. Other requirements in PNS/BAFS 13:2024 may require physical, production, sizing, maturity, or inspection data.',
                     style: TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 10,
+                      fontSize: 11,
                       height: 1.4,
                     ),
                   ),
@@ -132,7 +133,6 @@ class _GuideCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 154,
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -140,54 +140,77 @@ class _GuideCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 100,
-            height: 120,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 340;
+
+          final illustration = Container(
+            width: isNarrow ? 110 : 82,
+            height: isNarrow ? 105 : 110,
             decoration: BoxDecoration(
               color: AppColors.greenSoft,
               borderRadius: BorderRadius.circular(14),
             ),
             alignment: Alignment.center,
-            child: const MangoIllustration(width: 78, height: 92),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: MangoIllustration(
+              width: isNarrow ? 70 : 66,
+              height: isNarrow ? 82 : 84,
+            ),
+          );
+
+          final details = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                data.title,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                data.subtitle,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                data.description,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          );
+
+          if (isNarrow) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  data.title,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  data.subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  data.description,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
-                    height: 1.35,
-                  ),
-                ),
+                Center(child: illustration),
+                const SizedBox(height: 12),
+                details,
               ],
-            ),
-          ),
-        ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              illustration,
+              const SizedBox(width: 12),
+              Expanded(child: details),
+            ],
+          );
+        },
       ),
     );
   }

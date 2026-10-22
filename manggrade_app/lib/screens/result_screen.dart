@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import '../models/classification_result.dart';
 import '../services/history_store.dart';
@@ -36,40 +37,39 @@ class _ResultScreenState extends State<ResultScreen> {
       body: SafeArea(
         top: false,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           children: [
-            const MangoPreview(height: 220),
-            const SizedBox(height: 13),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        result.title,
-                        style: TextStyle(
-                          color: result.color,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                        ),
+            const MangoPreview(height: 200),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final narrow = constraints.maxWidth < 340;
+
+                final resultInfo = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      result.title,
+                      style: TextStyle(
+                        color: result.color,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w800,
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        result.subtitle,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      result.subtitle,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 108,
-                  padding: const EdgeInsets.all(9),
+                    ),
+                  ],
+                );
+
+                final confidence = Container(
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -83,7 +83,7 @@ class _ResultScreenState extends State<ResultScreen> {
                           fontSize: 10,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Text(
                         '${(result.confidence * 100).toStringAsFixed(2)}%',
                         style: TextStyle(
@@ -94,10 +94,32 @@ class _ResultScreenState extends State<ResultScreen> {
                       ),
                     ],
                   ),
-                ),
-              ],
+                );
+
+                if (narrow) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      resultInfo,
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: confidence,
+                      ),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: resultInfo),
+                    const SizedBox(width: 10),
+                    SizedBox(width: 112, child: confidence),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 13),
+            const SizedBox(height: 14),
             SectionCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +135,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   const SizedBox(height: 10),
                   ...result.criteria.map(
                     (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.only(bottom: 9),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -128,8 +150,8 @@ class _ResultScreenState extends State<ResultScreen> {
                               item,
                               style: const TextStyle(
                                 color: AppColors.textPrimary,
-                                fontSize: 11,
-                                height: 1.35,
+                                fontSize: 12,
+                                height: 1.4,
                               ),
                             ),
                           ),
@@ -140,35 +162,35 @@ class _ResultScreenState extends State<ResultScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 13),
+            const SizedBox(height: 14),
             const SectionCard(
               color: AppColors.surface,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Model   MobileNetV3        Input   224 × 224',
+                    'Model: MobileNetV3',
                     style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   SizedBox(height: 6),
                   Text(
-                    'Processing   On-device (offline)',
+                    'Input size: 224 × 224',
                     style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   SizedBox(height: 6),
                   Text(
-                    'AI assessment • Visual criteria only',
+                    'Visual classification reference only',
                     style: TextStyle(
                       color: AppColors.green,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -176,53 +198,85 @@ class _ResultScreenState extends State<ResultScreen> {
               ),
             ),
             const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: FilledButton(
-                      onPressed: widget.onClassifyAnother,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.green,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 360) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: 48,
+                        child: FilledButton(
+                          onPressed: widget.onClassifyAnother,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.green,
+                          ),
+                          child: const Text('Classify Another'),
+                        ),
                       ),
-                      child: const Text(
-                        'Classify Another',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: saved
+                              ? null
+                              : () {
+                                  HistoryStore.add(result);
+                                  setState(() => saved = true);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Result saved to local demo history.',
+                                      ),
+                                    ),
+                                  );
+                                },
+                          child: Text(saved ? 'Saved' : 'Save Result'),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: FilledButton(
+                          onPressed: widget.onClassifyAnother,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.green,
+                          ),
+                          child: const Text('Classify Another'),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed: saved
-                          ? null
-                          : () {
-                              HistoryStore.add(result);
-                              setState(() => saved = true);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Result saved to local demo history.',
-                                  ),
-                                ),
-                              );
-                            },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.green,
-                        side: const BorderSide(color: AppColors.green),
-                      ),
-                      child: Text(
-                        saved ? 'Saved' : 'Save Result',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: saved
+                              ? null
+                              : () {
+                                  HistoryStore.add(result);
+                                  setState(() => saved = true);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Result saved to local demo history.',
+                                      ),
+                                    ),
+                                  );
+                                },
+                          child: Text(saved ? 'Saved' : 'Save Result'),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
           ],
         ),
