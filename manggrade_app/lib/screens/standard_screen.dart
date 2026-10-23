@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/classification_result.dart';
 import '../theme/app_theme.dart';
-import '../widgets/mango_illustration.dart';
 
 class StandardScreen extends StatelessWidget {
   const StandardScreen({super.key});
@@ -14,24 +13,28 @@ class StandardScreen extends StatelessWidget {
         'Extra Class',
         'Superior quality',
         'Practically free from defects. Very slight superficial defects only.',
+        'assets/images/extra_class.png',
       ),
       const _GuideData(
         MangoClass.classI,
         'Class I',
         'Good quality',
         'Slight shape and skin defects may be permitted; visible quality remains acceptable.',
+        'assets/images/class_i.png',
       ),
       const _GuideData(
         MangoClass.classII,
         'Class II',
         'Minimum quality',
         'Shape and skin defects may be present within the allowed visual limits.',
+        'assets/images/class_ii.png',
       ),
       const _GuideData(
         MangoClass.reject,
         'Reject Class',
         'Non-compliant',
         'App-defined reject output for samples that do not meet the minimum quality threshold.',
+        'assets/images/reject_class.png',
       ),
     ];
 
@@ -102,12 +105,14 @@ class _GuideData {
   final String title;
   final String subtitle;
   final String description;
+  final String imagePath;
 
   const _GuideData(
     this.mangoClass,
     this.title,
     this.subtitle,
     this.description,
+    this.imagePath,
   );
 }
 
@@ -150,7 +155,22 @@ class _GuideCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
             alignment: Alignment.center,
-            child: const MangoIllustration(width: 78, height: 92),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                data.imagePath,
+                width: 100,
+                height: 120,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 32,
+                    color: AppColors.textSecondary,
+                  );
+                },
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
