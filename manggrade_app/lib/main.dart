@@ -10,23 +10,23 @@ Future<void> main() async {
 
   await HistoryStore.initialize();
 
-  runApp(const MangoGradeApp());
+  runApp(const MangGradeApp());
 }
 
-class MangoGradeApp extends StatefulWidget {
-  const MangoGradeApp({super.key});
+class MangGradeApp extends StatefulWidget {
+  const MangGradeApp({super.key});
 
   @override
-  State<MangoGradeApp> createState() => _MangoGradeAppState();
+  State<MangGradeApp> createState() => _MangGradeAppState();
 }
 
-class _MangoGradeAppState extends State<MangoGradeApp> {
+class _MangGradeAppState extends State<MangGradeApp> {
   bool showSplash = true;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MangoGrade',
+      title: 'MangGrade',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       home: showSplash

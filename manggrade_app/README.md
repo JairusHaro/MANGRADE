@@ -1,12 +1,13 @@
-# MangoGrade Flutter
+# MangGrade Flutter
 
-MangoGrade is a Flutter implementation of the Figma high-fidelity HCI for mango quality classification.
+MangGrade is a Flutter implementation of the Figma high-fidelity HCI for mango quality classification.
 
 ## Current build
 
 This downloadable version is intentionally runnable before the trained AI model is added.
 
 Included:
+
 - Splash screen
 - Home dashboard
 - Scan screen
@@ -20,6 +21,7 @@ Included:
 - Fully offline demo flow
 
 Not yet connected:
+
 - Real phone camera
 - Gallery picker
 - Real `.tflite` MobileNetV3 model
@@ -32,11 +34,13 @@ The `MangoClassifier` service is isolated so the real model can be connected lat
 This ZIP contains the complete Flutter source. Run this once from the project root:
 
 ### Windows
+
 ```bat
 setup_project.bat
 ```
 
 ### macOS / Linux
+
 ```bash
 chmod +x setup_project.sh
 ./setup_project.sh
@@ -45,7 +49,7 @@ chmod +x setup_project.sh
 The script runs:
 
 ```bash
-flutter create . --platforms=android --org com.mangograde
+flutter create . --platforms=android --org com.manggrade
 flutter pub get
 ```
 
@@ -56,7 +60,7 @@ This generates the Android host project using the Flutter version already instal
 1. Extract the ZIP.
 2. Run `setup_project.bat` once.
 3. Open Android Studio.
-4. Choose **Open** and select the `MangoGradeFlutter` folder.
+4. Choose **Open** and select the `MangGradeFlutter` folder.
 5. Wait for Flutter/Gradle synchronization.
 6. Select your Android phone or emulator.
 7. Press **Run ▶**.
@@ -72,6 +76,7 @@ flutter run
 On **Scan Mango**, press **Analyze Demo Mango**.
 
 The demo classifier cycles through:
+
 - Extra Class
 - Class I
 - Class II

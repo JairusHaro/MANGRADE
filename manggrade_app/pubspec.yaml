@@ -1,5 +1,5 @@
-name: mangograde
-description: MangoGrade - offline mango quality classification UI based on the Figma HCI design.
+name: manggrade
+description: MangGrade - offline mango quality classification.
 publish_to: "none"
 
 version: 1.0.0+1

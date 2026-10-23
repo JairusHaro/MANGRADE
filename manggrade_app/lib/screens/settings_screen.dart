@@ -116,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'MangoGrade',
+                  'MangGrade',
                   style: TextStyle(
                     color: AppColors.green,
                     fontSize: 15,

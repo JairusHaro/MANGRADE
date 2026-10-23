@@ -1,7 +1,7 @@
 @echo off
 setlocal
 echo ==========================================
-echo MangoGrade Flutter - Android Setup
+echo MangGrade Flutter - Android Setup
 echo ==========================================
 where flutter >nul 2>nul
 if errorlevel 1 (
@@ -13,7 +13,7 @@ if errorlevel 1 (
 
 echo.
 echo Creating/updating Android host files...
-flutter create . --platforms=android --org com.mangograde
+flutter create . --platforms=android --org com.manggrade
 
 if errorlevel 1 (
   echo.

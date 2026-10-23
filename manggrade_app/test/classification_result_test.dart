@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mangograde/models/classification_result.dart';
+import 'package:manggrade/models/classification_result.dart';
 
 void main() {
   group('ClassificationResult', () {

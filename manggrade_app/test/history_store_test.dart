@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mangograde/models/classification_result.dart';
-import 'package:mangograde/services/history_store.dart';
+import 'package:manggrade/models/classification_result.dart';
+import 'package:manggrade/services/history_store.dart';
 
 void main() {
   setUp(() {

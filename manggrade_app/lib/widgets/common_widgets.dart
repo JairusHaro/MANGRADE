@@ -16,7 +16,7 @@ class BrandText extends StatelessWidget {
         ),
         children: const [
           TextSpan(
-            text: 'Mango',
+            text: 'Mang',
             style: TextStyle(color: AppColors.green),
           ),
           TextSpan(

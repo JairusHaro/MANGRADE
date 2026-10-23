@@ -5,5 +5,5 @@ echo.
 echo Running flutter analyze...
 flutter analyze
 echo.
-echo If there are no errors, the MangoGrade source is ready.
+echo If there are no errors, the MangGrade source is ready.
 pause
