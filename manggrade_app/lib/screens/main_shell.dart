@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/classification_result.dart';
+import '../models/mango_view.dart';
 import '../services/history_store.dart';
 import '../services/manggrade_api.dart';
 import '../theme/app_theme.dart';
@@ -24,8 +25,19 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int index = 0;
 
+  /// Changing this gives ScanScreen a fresh state (clears the 3 photos).
+  int _scanSession = 0;
+
   void _go(int value) {
     setState(() => index = value);
+  }
+
+  /// Opens the Scan tab with empty Front/Back/Top slots.
+  void _startNewScan() {
+    setState(() {
+      _scanSession++;
+      index = 2;
+    });
   }
 
   MangoClass? _parseMangoClass(String grade) {
@@ -51,11 +63,15 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  void _startAnalysis(String? imagePath) {
+  void _startAnalysis(Map<MangoView, String> imagePaths) {
+    // The front photo represents the mango in history and on the result
+    // screen; both still store a single image path.
+    final frontImagePath = imagePaths[MangoView.front];
+
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ProcessingScreen(
-          imagePath: imagePath,
+          imagePaths: imagePaths,
           onFinished: (MangoApiResponse response) async {
             final grade = response.predictedGrade;
             final confidence = response.confidence;
@@ -74,7 +90,7 @@ class _MainShellState extends State<MainShell> {
                       mangoClass: mangoClass,
                       confidence: confidence,
                       timestamp: DateTime.now(),
-                      imagePath: imagePath,
+                      imagePath: frontImagePath,
                       isDemo: false,
                     ),
                   );
@@ -90,10 +106,11 @@ class _MainShellState extends State<MainShell> {
               MaterialPageRoute<void>(
                 builder: (_) => ApiResultScreen(
                   response: response,
-                  imagePath: imagePath,
+                  imagePath: frontImagePath,
                   onClassifyAnother: () {
                     Navigator.of(context).pop();
-                    _go(2);
+                    // Upload succeeded: next mango starts with empty slots.
+                    _startNewScan();
                   },
                 ),
               ),
@@ -104,9 +121,10 @@ class _MainShellState extends State<MainShell> {
               MaterialPageRoute<void>(
                 builder: (_) => ApiResultScreen(
                   errorMessage: message,
-                  imagePath: imagePath,
+                  imagePath: frontImagePath,
                   onClassifyAnother: () {
                     Navigator.of(context).pop();
+                    // Upload failed: keep the 3 photos so the user can retry.
                     _go(2);
                   },
                 ),
@@ -131,7 +149,10 @@ class _MainShellState extends State<MainShell> {
     final screens = [
       HomeScreen(onNavigate: _go),
       const HistoryScreen(),
-      ScanScreen(onAnalyze: _startAnalysis),
+      ScanScreen(
+        key: ValueKey<int>(_scanSession),
+        onAnalyze: _startAnalysis,
+      ),
       const StandardScreen(),
       AboutScreen(onOpenSettings: _openSettings),
     ];

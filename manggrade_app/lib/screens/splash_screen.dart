@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/mango_illustration.dart';
@@ -16,18 +18,52 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   Timer? _timer;
+  late final AnimationController _animationController;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(milliseconds: 1800), widget.onFinished);
+
+    // Subtle entrance animation.
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.94,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _animationController.forward();
+
+    // Move to the main screen after approximately 2 seconds.
+    _timer = Timer(const Duration(seconds: 2), () {
+      if (mounted) {
+        widget.onFinished();
+      }
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -38,99 +74,153 @@ class _SplashScreenState extends State<SplashScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-            child: Column(
-              children: [
-                Container(
-                  width: 112,
-                  height: 112,
-                  decoration: BoxDecoration(
-                    color: AppColors.greenSoft,
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                  alignment: Alignment.center,
-                  child: const MangoIllustration(width: 76, height: 90),
-                ),
-                const SizedBox(height: 16),
-                const BrandText(fontSize: 34),
-                const SizedBox(height: 10),
-                const Text(
-                  'AI-Based Mango Quality Classification',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: AppColors.green,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'Using MobileNetV3',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 28,
+            ),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Mango illustration with a soft background.
+                    Container(
+                      width: 116,
+                      height: 116,
+                      decoration: BoxDecoration(
+                        color: AppColors.greenSoft,
+                        borderRadius: BorderRadius.circular(34),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.green.withValues(alpha: 0.08),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: const MangoIllustration(
+                        width: 76,
+                        height: 90,
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                const SectionCard(
-                  child: Column(
-                    children: [
-                      Text(
-                        'Based on',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
+
+                    const SizedBox(height: 20),
+
+                    // App name.
+                    const BrandText(fontSize: 34),
+
+                    const SizedBox(height: 8),
+
+                    // App description.
+                    const Text(
+                      'AI-Based Mango Quality Classification',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'PNS/BAFS 13:2024',
-                        style: TextStyle(
-                          color: AppColors.green,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // Model badge.
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
                       ),
-                      SizedBox(height: 5),
-                      Text(
-                        'Mangoes — Product Standard — Grading and Classification',
-                        textAlign: TextAlign.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.green,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'MobileNetV3',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: Colors.white,
                           fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Philippine mango grading standard.
+                    const SectionCard(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'GRADING STANDARD',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'PNS/BAFS 13:2024',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.green,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            'Mangoes — Product Standard — '
+                            'Grading and Classification',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 26),
+
+                    // Animated loading indicator.
+                    const SizedBox(
+                      width: 190,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(999),
+                        ),
+                        child: LinearProgressIndicator(
+                          minHeight: 6,
+                          color: AppColors.green,
+                          backgroundColor: AppColors.border,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    const Text(
+                      'Preparing MangGrade…',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 18),
-                const SizedBox(
-                  width: 220,
-                  child: LinearProgressIndicator(
-                    minHeight: 7,
-                    color: AppColors.green,
-                    backgroundColor: AppColors.border,
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Preparing offline classifier…',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),

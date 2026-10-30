@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import '../models/mango_view.dart';
+
 class MangoApiResponse {
   final bool predictionAvailable;
   final String message;
@@ -29,15 +31,47 @@ class MangGradeApi {
   // Flutter desktop or web on the same computer: use 127.0.0.1.
   static const String baseUrl = 'http://10.0.2.2:8000';
 
+  /// Single-image upload to /predict (kept for compatibility).
   static Future<MangoApiResponse> analyzeImage(String imagePath) async {
     final uri = Uri.parse('$baseUrl/predict');
     final request = http.MultipartRequest('POST', uri)
       ..files.add(await http.MultipartFile.fromPath('file', imagePath));
 
+    return _send(request);
+  }
+
+  /// Uploads the front, back and top photos of one mango to
+  /// /predict-multiview in a single request.
+  static Future<MangoApiResponse> analyzeViews(
+    Map<MangoView, String> imagePaths,
+  ) async {
+    final missing = MangoView.values
+        .where((view) => imagePaths[view] == null)
+        .map((view) => view.label)
+        .toList();
+    if (missing.isNotEmpty) {
+      throw Exception('Missing photo: ${missing.join(', ')}.');
+    }
+
+    final uri = Uri.parse('$baseUrl/predict-multiview');
+    final request = http.MultipartRequest('POST', uri);
+
+    for (final view in MangoView.values) {
+      request.files.add(
+        await http.MultipartFile.fromPath(view.apiField, imagePaths[view]!),
+      );
+    }
+
+    // Three photos take longer to upload than one.
+    return _send(request, timeout: const Duration(seconds: 60));
+  }
+
+  static Future<MangoApiResponse> _send(
+    http.MultipartRequest request, {
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
     try {
-      final streamedResponse = await request.send().timeout(
-            const Duration(seconds: 30),
-          );
+      final streamedResponse = await request.send().timeout(timeout);
       final response = await http.Response.fromStream(streamedResponse);
       final Map<String, dynamic> data;
 

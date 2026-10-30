@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/mango_view.dart';
 import '../services/manggrade_api.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mango_illustration.dart';
@@ -7,13 +8,15 @@ import '../widgets/mango_illustration.dart';
 class ProcessingScreen extends StatefulWidget {
   final ValueChanged<MangoApiResponse> onFinished;
   final ValueChanged<String> onError;
-  final String? imagePath;
+
+  /// Front, back and top photo paths.
+  final Map<MangoView, String> imagePaths;
 
   const ProcessingScreen({
     super.key,
     required this.onFinished,
     required this.onError,
-    this.imagePath,
+    required this.imagePaths,
   });
 
   @override
@@ -28,13 +31,23 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   }
 
   Future<void> _analyze() async {
-    if (widget.imagePath == null) {
-      widget.onError('Please select an image first.');
+    final missing = MangoView.values
+        .where((view) => widget.imagePaths[view] == null)
+        .map((view) => view.label)
+        .toList();
+
+    if (missing.isNotEmpty) {
+      // Defer so we don't navigate during the first build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onError('Missing photo: ${missing.join(', ')}.');
+        }
+      });
       return;
     }
 
     try {
-      final result = await MangGradeApi.analyzeImage(widget.imagePath!);
+      final result = await MangGradeApi.analyzeViews(widget.imagePaths);
       if (!mounted) return;
       widget.onFinished(result);
     } catch (error) {
@@ -55,7 +68,8 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'Uploading Mango Image',
+                  'Uploading 3 Mango Photos',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 22,
@@ -89,8 +103,8 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'Sending your image to the MangGrade backend. '
-                  'A grade will only be shown when a trained model '
+                  'Sending the front, back and top photos to the MangGrade '
+                  'backend. A grade will only be shown when a trained model '
                   'is connected.',
                   textAlign: TextAlign.center,
                   style: TextStyle(

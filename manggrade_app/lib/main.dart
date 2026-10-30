@@ -5,11 +5,8 @@ import 'screens/splash_screen.dart';
 import 'services/history_store.dart';
 import 'theme/app_theme.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await HistoryStore.initialize();
-
   runApp(const MangGradeApp());
 }
 
@@ -24,6 +21,12 @@ class _MangGradeAppState extends State<MangGradeApp> {
   bool showSplash = true;
 
   @override
+  void initState() {
+    super.initState();
+    HistoryStore.initialize();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MangGrade',
@@ -31,7 +34,11 @@ class _MangGradeAppState extends State<MangGradeApp> {
       theme: AppTheme.light(),
       home: showSplash
           ? SplashScreen(
-              onFinished: () => setState(() => showSplash = false),
+              onFinished: () {
+                if (mounted) {
+                  setState(() => showSplash = false);
+                }
+              },
             )
           : const MainShell(),
     );
