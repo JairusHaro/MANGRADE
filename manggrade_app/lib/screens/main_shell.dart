@@ -64,8 +64,8 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _startAnalysis(Map<MangoView, String> imagePaths) {
-    // The front photo represents the mango in history and on the result
-    // screen; both still store a single image path.
+    // The front photo represents the mango on the result screen and in
+    // history; history also keeps all three photos (imagePaths).
     final frontImagePath = imagePaths[MangoView.front];
 
     Navigator.of(context).push(
@@ -85,12 +85,24 @@ class _MainShellState extends State<MainShell> {
 
               if (mangoClass != null) {
                 try {
+                  final timestamp = DateTime.now();
+                  // Copy the photos out of the temporary picker cache so the
+                  // history keeps them.
+                  final savedPaths = await HistoryStore.persistPhotos(
+                    {
+                      for (final entry in imagePaths.entries)
+                        entry.key.apiField: entry.value,
+                    },
+                    timestamp,
+                  );
                   await HistoryStore.add(
                     ClassificationResult(
                       mangoClass: mangoClass,
                       confidence: confidence,
-                      timestamp: DateTime.now(),
-                      imagePath: frontImagePath,
+                      timestamp: timestamp,
+                      imagePath:
+                          savedPaths[MangoView.front.apiField] ?? frontImagePath,
+                      imagePaths: savedPaths,
                       isDemo: false,
                     ),
                   );

@@ -104,8 +104,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                 const SizedBox(height: 24),
                 const Text(
                   'Sending the front, back and top photos to the MangGrade '
-                  'backend. A grade will only be shown when a trained model '
-                  'is connected.',
+                  'backend for quality checks and grading.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textSecondary,

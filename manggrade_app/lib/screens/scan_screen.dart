@@ -380,8 +380,8 @@ class _ScanScreenState extends State<ScanScreen> {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Your 3 photos will be uploaded for validation. '
-                          'Mango grading will be available once the trained model is connected.',
+                          'Your 3 photos will be checked for quality and '
+                          'graded by the MangGrade model on the server.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.textSecondary,

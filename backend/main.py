@@ -1,19 +1,154 @@
-from io import BytesIO
+from contextlib import asynccontextmanager
+from dataclasses import asdict
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from PIL import Image, UnidentifiedImageError
+from fastapi import FastAPI, File, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
+from fastapi.encoders import jsonable_encoder
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+
+from image_validation import (
+    ImageValidationError,
+    ValidatedImage,
+    ValidationReport,
+    read_upload,
+    require_valid,
+    validate_image_bytes,
+)
+from model_service import (
+    AGGREGATION_METHOD,
+    AGGREGATION_NOTE,
+    GRADES as MODEL_GRADES,
+    InferenceError,
+    ModelService,
+    ModelUnavailableError,
+    Prediction,
+    aggregate_mean,
+    probabilities_dict,
+)
+from validation_config import load_config
+
+# Class order of the trained model's output. Do not reorder.
+GRADES = list(MODEL_GRADES)
+MANGO_VIEWS = ["front", "back", "top"]
+
+# All validation thresholds (formats, size, resolution, blur, brightness).
+# Defaults live in validation_config.py; override with MANGGRADE_* env vars.
+VALIDATION_CONFIG = load_config()
+
+# The single model instance. Loaded once at start-up; see model_service.py
+# for the checks it must pass. Override the folder with MANGGRADE_MODEL_DIR.
+MODEL_SERVICE = ModelService()
+
+CONFIDENCE_NOTE = (
+    "Confidence is the model's probability for the predicted grade. "
+    "It is not a calibrated accuracy estimate."
+)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    if not MODEL_SERVICE.available:
+        await run_in_threadpool(MODEL_SERVICE.load)
+    yield
+
 
 app = FastAPI(
     title="MangGrade API",
     description="Mango quality grading system prototype",
-    version="0.2.0",
+    version="0.5.0",
+    lifespan=lifespan,
 )
 
-GRADES = ["Extra Class", "Class I", "Class II", "Reject"]
-MAX_IMAGE_BYTES = 10 * 1024 * 1024
-MAX_IMAGE_PIXELS = 40_000_000
-ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
-ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
+
+class ViewInferenceError(Exception):
+    """Inference failed for one photo (keeps the view name for the message)."""
+
+    def __init__(self, view: str | None, error: InferenceError):
+        super().__init__(str(error))
+        self.view = view
+        self.error = error
+
+
+@app.exception_handler(ImageValidationError)
+async def image_validation_error_handler(request: Request, error: ImageValidationError):
+    """Rejected images return {"detail": "<message>", "validation": {...}}.
+
+    "detail" stays a plain string, as before, so the Flutter app keeps
+    showing the message without changes. "validation" is the full report.
+    """
+    content = {
+        "detail": error.detail,
+        "validation": error.report.model_dump(mode="json"),
+    }
+    if error.view:
+        content["view"] = error.view
+    return JSONResponse(status_code=error.status_code, content=content)
+
+
+@app.exception_handler(ModelUnavailableError)
+async def model_unavailable_handler(request: Request, error: ModelUnavailableError):
+    """503: the model is not loaded. No grade is ever simulated."""
+    return JSONResponse(
+        status_code=503,
+        content={
+            "detail": "The grading model is not available on the server. No grade was predicted.",
+            "model_status": "unavailable",
+            "model_error": str(error),
+        },
+    )
+
+
+@app.exception_handler(ViewInferenceError)
+async def inference_error_handler(request: Request, error: ViewInferenceError):
+    """500: the model failed on a photo that passed validation."""
+    prefix = f"{error.view.capitalize()} photo: " if error.view else ""
+    content = {
+        "detail": f"{prefix}the model could not process this photo. No grade was predicted.",
+        "model_error": str(error.error),
+    }
+    if error.view:
+        content["view"] = error.view
+    return JSONResponse(status_code=500, content=content)
+
+
+PHOTO_FIELDS = {"front", "back", "top", "file"}
+PHOTO_ROUTES = {"/predict", "/predict-multiview"}
+
+
+@app.exception_handler(RequestValidationError)
+async def missing_photo_handler(request: Request, error: RequestValidationError):
+    """422 with a plain message when a photo is missing from /predict or /predict-multiview.
+
+    "detail" is a string so the Flutter app shows it as is. The standard
+    FastAPI error list is kept under "errors". Every other validation error
+    gets FastAPI's default response, unchanged.
+    """
+    errors = error.errors()
+    missing = [
+        str(e["loc"][-1])
+        for e in errors
+        if e.get("type") == "missing"
+        and len(e.get("loc", ())) == 2
+        and e["loc"][0] == "body"
+        and e["loc"][-1] in PHOTO_FIELDS
+    ]
+    if request.url.path not in PHOTO_ROUTES or not missing or len(missing) != len(errors):
+        return await request_validation_exception_handler(request, error)
+
+    if missing == ["file"]:
+        detail = "Missing photo: no image was uploaded."
+    else:
+        detail = (
+            f"Missing photo: {', '.join(missing)}. "
+            "Please take the front, back and top photos of the mango."
+        )
+    return JSONResponse(
+        status_code=422,
+        content={"detail": detail, "missing": missing, "errors": jsonable_encoder(errors)},
+    )
 
 
 @app.get("/")
@@ -21,8 +156,8 @@ def home():
     return {
         "message": "Welcome to MangGrade!",
         "status": "running",
-        "model_status": "not connected yet",
-        "inference_mode": "not configured",
+        "model_status": "loaded" if MODEL_SERVICE.available else "unavailable",
+        "inference_mode": "local TFLite model (ai-edge-litert)",
     }
 
 
@@ -33,82 +168,171 @@ def health_check():
 
 @app.get("/model-status")
 def model_status():
-    """Reports model availability without implying that demo results are predictions."""
+    """Reports whether the verified model is loaded, and why not if it is not."""
+    status = MODEL_SERVICE.status()
     return {
-        "available": False,
-        "model_status": "not trained or connected",
+        "available": status["available"],
+        "model_status": status["model_status"],
         "grades": GRADES,
+        "error": status["error"],
+        "model": status["model"],
+        "load_ms": status["load_ms"],
+        "aggregation": {"method": AGGREGATION_METHOD, "note": AGGREGATION_NOTE},
     }
 
+
+@app.get("/validation-config")
+def validation_config():
+    """The validation thresholds currently in use (read-only)."""
+    config = asdict(VALIDATION_CONFIG)
+    config["allowed_formats"] = sorted(config["allowed_formats"])
+    return config
+
+
+async def _validate_upload(file: UploadFile) -> ValidatedImage:
+    """Read one upload and run every validation check (never raises for bad images)."""
+    contents, size = await read_upload(file, VALIDATION_CONFIG)
+
+    # Image decoding and OpenCV work are CPU-heavy; run them off the event loop.
+    return await run_in_threadpool(
+        validate_image_bytes,
+        contents,
+        VALIDATION_CONFIG,
+        filename=file.filename or "uploaded_image",
+        content_type=(file.content_type or "").lower().split(";")[0].strip() or None,
+        size_bytes=size,
+    )
+
+
+def _require_model() -> None:
+    """Fail fast with 503 before any upload work if the model is not loaded."""
+    if not MODEL_SERVICE.available:
+        raise ModelUnavailableError(MODEL_SERVICE.error or "Model is not loaded.")
+
+
+def _run_model(validated: ValidatedImage) -> Prediction:
+    """Option B preprocessing + one model run (CPU work; call in a thread)."""
+    return MODEL_SERVICE.predict(validated.to_model_input())
+
+
+async def _predict_view(validated: ValidatedImage, view: str | None = None) -> Prediction:
+    try:
+        return await run_in_threadpool(_run_model, validated)
+    except InferenceError as error:
+        raise ViewInferenceError(view, error) from error
+
+
+def _image_fields(validated: ValidatedImage) -> dict:
+    """The image fields /predict has always returned."""
+    image = validated.report.image
+    return {
+        "filename": image.filename,
+        "image_format": image.image_format,
+        "width": image.width,
+        "height": image.height,
+        "received_content_type": image.received_content_type,
+    }
+
+
+@app.post("/validate", response_model=ValidationReport)
+async def validate_mango_image(file: UploadFile = File(...)):
+    """Check one photo's quality before classification.
+
+    Always answers 200 with a report: "accepted", "accepted_with_warnings"
+    or "rejected". Use it right after the user takes a photo, so they can
+    retake a bad one immediately.
+    """
+    validated = await _validate_upload(file)
+    return validated.report
 
 
 @app.post("/predict")
 async def predict_mango(file: UploadFile = File(...)):
-    """Validate an uploaded image. No prediction is made until a model is connected."""
+    """Validate one photo and grade it with the model.
 
-    filename = file.filename or "uploaded_image"
-    content_type = (file.content_type or "").lower().split(";")[0].strip()
-
-    try:
-        # Read at most one byte beyond the upload limit.
-        contents = await file.read(MAX_IMAGE_BYTES + 1)
-    finally:
-        await file.close()
-
-    if len(contents) > MAX_IMAGE_BYTES:
-        raise HTTPException(
-            status_code=413,
-            detail="Image must be 10 MB or smaller.",
-        )
-
-    try:
-        with Image.open(BytesIO(contents)) as image:
-            image_format = image.format
-            width, height = image.size
-
-            if image_format not in ALLOWED_IMAGE_FORMATS:
-                raise HTTPException(
-                    status_code=400,
-                    detail="The uploaded content must be a JPG, PNG, or WEBP image.",
-                )
-
-            if (
-                width <= 0
-                or height <= 0
-                or width * height > MAX_IMAGE_PIXELS
-            ):
-                raise HTTPException(
-                    status_code=413,
-                    detail="Image dimensions are too large to process safely.",
-                )
-
-            image.verify()
-
-    except HTTPException:
-        raise
-    except (
-        UnidentifiedImageError,
-        OSError,
-        Image.DecompressionBombError,
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="The uploaded file is not a valid image.",
-        )
+    Rejected images return 400 / 413 / 422 with a "detail" message.
+    503 if the model is not loaded. For a whole-mango grade use
+    /predict-multiview with the front, back and top photos.
+    """
+    _require_model()
+    validated = require_valid(await _validate_upload(file))
+    prediction = await _predict_view(validated)
 
     return {
-        "filename": filename,
-        "image_format": image_format,
-        "width": width,
-        "height": height,
-        "received_content_type": content_type or None,
-        "predicted_grade": None,
-        "confidence": None,
+        **_image_fields(validated),
+        "predicted_grade": prediction.grade,
+        "confidence": round(prediction.confidence, 6),
+        "probabilities": probabilities_dict(prediction.probabilities),
         "grades": GRADES,
-        "model_status": "not connected",
-        "prediction_is_real": False,
+        "model_status": "loaded",
+        "prediction_is_real": True,
         "message": (
-            "Image received and validated successfully. "
-            "No grade was predicted because the trained model is not connected."
+            f"Predicted grade from one photo: {prediction.grade}. "
+            "For a whole-mango grade, use the front, back and top photos."
         ),
+        "confidence_note": CONFIDENCE_NOTE,
+        "model": MODEL_SERVICE.metadata(),
+        "validation": validated.report.model_dump(mode="json"),
+    }
+
+
+@app.post("/predict-multiview")
+async def predict_mango_multiview(
+    front: UploadFile = File(...),
+    back: UploadFile = File(...),
+    top: UploadFile = File(...),
+):
+    """Validate and grade the front, back and top photos of ONE mango.
+
+    Each photo is validated in order (front, back, top); the first rejected
+    photo stops the request with its view name, as before. Then the model
+    grades each photo and the three probability vectors are averaged
+    (provisional method, see AGGREGATION_NOTE).
+    """
+    _require_model()
+
+    uploads = {"front": front, "back": back, "top": top}
+    validated_views: dict[str, ValidatedImage] = {}
+
+    for view_name in MANGO_VIEWS:
+        validated = await _validate_upload(uploads[view_name])
+        # Tell the user WHICH photo was rejected.
+        validated_views[view_name] = require_valid(validated, view=view_name)
+
+    predictions = {
+        name: await _predict_view(validated, view=name)
+        for name, validated in validated_views.items()
+    }
+    result = aggregate_mean(predictions)
+
+    message = f"Predicted grade: {result.grade} (average of the front, back and top photos)."
+    if not result.views_agree:
+        per_view = ", ".join(f"{name} {p.grade}" for name, p in predictions.items())
+        message += f" The photos did not all give the same grade ({per_view})."
+
+    return {
+        "views": {
+            name: {
+                **_image_fields(validated),
+                "validation": validated.report.model_dump(mode="json"),
+                "prediction": predictions[name].as_dict(),
+            }
+            for name, validated in validated_views.items()
+        },
+        "view_order": MANGO_VIEWS,
+        "predicted_grade": result.grade,
+        "confidence": round(result.confidence, 6),
+        "probabilities": probabilities_dict(result.probabilities),
+        "views_agree": result.views_agree,
+        "aggregation": {
+            "method": AGGREGATION_METHOD,
+            "views_used": list(predictions),
+            "note": AGGREGATION_NOTE,
+        },
+        "grades": GRADES,
+        "model_status": "loaded",
+        "prediction_is_real": True,
+        "message": message,
+        "confidence_note": CONFIDENCE_NOTE,
+        "model": MODEL_SERVICE.metadata(),
     }

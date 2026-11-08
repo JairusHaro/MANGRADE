@@ -1,0 +1,144 @@
+{
+  "description": "Preprocessing-parity fixtures: original test photos (from MangGrade_Dataset / MangGrade_Online on Google Drive) and the 224x224 training images built from them (MangGrade_Dataset_Ready/test). The originals' SHA-256 values are the ones recorded in MangGrade_Dataset_Ready/manifest.csv.",
+  "expected_source": "probabilities_stored = LiteRT 2.3.0 output for the stored training image decoded with Pillow; probabilities_option_a = output for the original letterboxed WITHOUT the JPEG q95 step. Both from MangGrade_Preprocessing_Parity.ipynb (v1), Google Colab, 2026-11-02. Values rounded to 4 decimals.",
+  "labels": [
+    "Extra Class",
+    "Class I",
+    "Class II",
+    "Reject"
+  ],
+  "fixtures": [
+    {
+      "original": "IMG_0473.JPG",
+      "original_sha256": "be54dd28b60e48c8cd7d35c4cb2be94c7a685b98373ab383fcf6b1d30fa71b89",
+      "stored": "Extra_Class_0189.jpg",
+      "true_label": "Extra Class",
+      "source": "guimaras",
+      "exif_orientation": 1,
+      "probabilities_stored": [
+        0.4509,
+        0.5483,
+        0.0008,
+        0.0
+      ],
+      "probabilities_option_a": [
+        0.5192,
+        0.4806,
+        0.0003,
+        0.0
+      ],
+      "manifest_source_file": "MangGrade_Dataset/Class_I/IMG_0473.JPG",
+      "stored_sha256": "4e4362b0ed33fc328183dede9ce5b7ccd8929241b1fe6bbccfe97e4149c8a25b"
+    },
+    {
+      "original": "IMG_0730.JPG",
+      "original_sha256": "d73ce9d87416a3bcb2a4d76a72aea54d2d29557908c7b1220202a6319bd18cd8",
+      "stored": "Extra_Class_0203.jpg",
+      "true_label": "Extra Class",
+      "source": "guimaras",
+      "exif_orientation": 6,
+      "probabilities_stored": [
+        0.4548,
+        0.5423,
+        0.0028,
+        0.0
+      ],
+      "probabilities_option_a": [
+        0.6157,
+        0.383,
+        0.0013,
+        0.0
+      ],
+      "manifest_source_file": "MangGrade_Dataset/Class_I/IMG_0730.JPG",
+      "stored_sha256": "284c59388c7a231e5d708b336c95b6fab274619da2c47b52ad66d40e762b129a"
+    },
+    {
+      "original": "IMG_0362.JPG",
+      "original_sha256": "f5ec81622a5709b2926f70d5d0c9f98e77926dd2974439aa8ff179bd64662115",
+      "stored": "Class_I_0607.jpg",
+      "true_label": "Class I",
+      "source": "guimaras",
+      "exif_orientation": 8,
+      "probabilities_stored": [
+        0.3365,
+        0.6626,
+        0.0008,
+        0.0
+      ],
+      "probabilities_option_a": [
+        0.524,
+        0.4755,
+        0.0005,
+        0.0
+      ],
+      "manifest_source_file": "MangGrade_Dataset/Class_I/IMG_0362.JPG",
+      "stored_sha256": "035c72df56bdba0da03730265f1bf84b472a94ad59ced2405dc3f82ef2018537"
+    },
+    {
+      "original": "IMG_0606.JPG",
+      "original_sha256": "c3258bddc140b19eca497b64de64a6768418c1befb7bd0bf4afaeaceecac1ea9",
+      "stored": "Class_I_0630.jpg",
+      "true_label": "Class I",
+      "source": "guimaras",
+      "exif_orientation": 1,
+      "probabilities_stored": [
+        0.0001,
+        0.3857,
+        0.6142,
+        0.0
+      ],
+      "probabilities_option_a": [
+        0.0002,
+        0.6229,
+        0.3769,
+        0.0
+      ],
+      "manifest_source_file": "MangGrade_Dataset/Class_I/IMG_0606.JPG",
+      "stored_sha256": "a7e1ff23a13efce67fadcf71c2e90b3758256c6a6296012b5c32e9dbe0bfa67c"
+    },
+    {
+      "original": "IMG_20260828_113209.jpg",
+      "original_sha256": "c713ff1f4389b4ac1529d6c9be8d9b05a2bcff21bbc2adb8a7aebef0b44061d7",
+      "stored": "Class_II_0280.jpg",
+      "true_label": "Class II",
+      "source": "guimaras",
+      "exif_orientation": 0,
+      "probabilities_stored": [
+        0.0068,
+        0.4691,
+        0.5224,
+        0.0017
+      ],
+      "probabilities_option_a": [
+        0.0113,
+        0.5703,
+        0.4168,
+        0.0016
+      ],
+      "manifest_source_file": "MangGrade_Dataset/Class_II/IMG_20260828_113209.jpg",
+      "stored_sha256": "d2ce62047c2e2d1abe9f1d4e17c0051e132cc41651e5c25a8ee2ef5fac30705f"
+    },
+    {
+      "original": "Carabao_0031.jpg",
+      "original_sha256": "31d137ccb04d69cf263610e21ecbf5bd5c31700c5cc69a46efb58fd21c9926a8",
+      "stored": "Reject_online_0023.jpg",
+      "true_label": "Reject",
+      "source": "online",
+      "exif_orientation": 1,
+      "probabilities_stored": [
+        0.0174,
+        0.2973,
+        0.2955,
+        0.3898
+      ],
+      "probabilities_option_a": [
+        0.0266,
+        0.3825,
+        0.239,
+        0.3519
+      ],
+      "manifest_source_file": "MangGrade_Online/Reject/Roboflow/Carabao_0031.jpg",
+      "stored_sha256": "3b8a228774890c664662de9186224c4eb9bd3bb217f9c14ea9000571925cb7f5"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "model": "MobileNetV3Large (ImageNet transfer learning), PNS/BAFS 13:2024 grades",
+  "input": {
+    "shape": [
+      1,
+      224,
+      224,
+      3
+    ],
+    "dtype": "float32",
+    "color": "RGB",
+    "range": "0-255 (no normalization - the model scales internally)",
+    "resize": "keep aspect ratio, pad to square with black (letterbox)"
+  },
+  "output": {
+    "type": "softmax probabilities",
+    "order": [
+      "Extra Class",
+      "Class I",
+      "Class II",
+      "Reject"
+    ]
+  },
+  "training": {
+    "img_size": 224,
+    "batch_size": 32,
+    "dropout": 0.3,
+    "optimizer": "Adam",
+    "loss": "sparse categorical cross-entropy",
+    "phase1": "base frozen, lr 1e-3, up to 20 epochs",
+    "phase2": "last 30 layers, lr 1e-5, 15 epochs",
+    "phase3": "last 80 layers, lr 1e-4 halved on plateau, early stopping patience 8",
+    "best_epoch": 35,
+    "epochs_run": 43,
+    "class_weight": {
+      "Extra_Class": 1.337,
+      "Class_I": 0.554,
+      "Class_II": 1.165,
+      "Reject": 1.697
+    }
+  },
+  "test_accuracy": {
+    "all": 0.7544,
+    "guimaras": 0.765
+  }
+}
